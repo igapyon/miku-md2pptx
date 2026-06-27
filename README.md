@@ -110,3 +110,9 @@ verification files, and temporary artifacts. Only `workplace/.gitkeep` is
 tracked.
 
 Generated build outputs under `dist/`, `bundle/`, and `coverage/` are ignored.
+
+## License
+
+Apache License 2.0.
+
+See [LICENSE](./LICENSE).

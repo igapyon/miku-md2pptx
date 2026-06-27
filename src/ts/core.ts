@@ -1,18 +1,18 @@
-import { parseMarkdown, extractText, extractTextRuns } from "./markdown-parser.ts";
+import { markdownToSlides } from "./slide-model.ts";
 import { createZip, type ZipFileEntry } from "./zip-io.ts";
+import { collectDiagnostics } from "./diagnostics.ts";
+import { createMediaManager, type MediaManager } from "./media.ts";
 import type {
   ImageSlideBlock,
-  MarkdownToPptxDiagnostic,
   MarkdownToPptxOptions,
   MarkdownToPptxResult,
-  ResolvedImage,
-  SlideBlock,
   SlideModel,
   TableCell,
   TextRun
 } from "./types.ts";
 
 export { type MarkdownToPptxDiagnostic, type MarkdownToPptxOptions, type MarkdownToPptxResult, type SlideModel } from "./types.ts";
+export { markdownToSlides } from "./slide-model.ts";
 
 const PRESENTATION_NS = "http://schemas.openxmlformats.org/presentationml/2006/main";
 const REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -26,172 +26,6 @@ function xmlEscape(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function normalizeLine(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
-}
-
-function normalizeRuns(runs: TextRun[]): TextRun[] {
-  const merged: TextRun[] = [];
-  for (const run of runs) {
-    const text = run.text.replace(/\s+/g, " ");
-    if (!text) {
-      continue;
-    }
-    const previous = merged[merged.length - 1];
-    if (previous && previous.href === run.href) {
-      previous.text += text;
-    } else {
-      merged.push(run.href ? { text, href: run.href } : { text });
-    }
-  }
-  const joined = merged.map((run) => run.text).join("").trim();
-  if (!joined) {
-    return [];
-  }
-  let trimStart = merged.findIndex((run) => run.text.trimStart().length > 0);
-  if (trimStart < 0) {
-    return [];
-  }
-  merged.splice(0, trimStart);
-  trimStart = 0;
-  merged[trimStart].text = merged[trimStart].text.trimStart();
-  merged[merged.length - 1].text = merged[merged.length - 1].text.trimEnd();
-  return merged.filter((run) => run.text.length > 0);
-}
-
-function textBlockFromRuns(runs: TextRun[], prefix = ""): SlideBlock[] {
-  const normalized = normalizeRuns(runs);
-  if (normalized.length === 0) {
-    return [];
-  }
-  const prefixedRuns = prefix ? [{ text: prefix }, ...normalized] : normalized;
-  return [{ kind: "text", text: prefixedRuns.map((run) => run.text).join(""), runs: prefixedRuns }];
-}
-
-function parseSpeakerNotesHtml(value: string): TextRun[][] {
-  const match = value.match(/^\s*<!--\s*speaker-notes(?::|\s)([\s\S]*?)-->\s*$/i);
-  if (!match) {
-    return [];
-  }
-  return match[1]
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => [{ text: line }]);
-}
-
-function tableRows(node: any): TableCell[][] {
-  const rows = Array.isArray(node.children) ? node.children : [];
-  return rows
-    .map((row: any) => {
-      const cells = Array.isArray(row.children) ? row.children : [];
-      return cells.map((cell: any) => {
-        const runs = normalizeRuns(extractTextRuns(cell));
-        return { text: runs.map((run) => run.text).join(""), runs };
-      });
-    })
-    .filter((row: TableCell[]) => row.length > 0);
-}
-
-function listBlocks(node: any, depth = 0): SlideBlock[] {
-  const blocks: SlideBlock[] = [];
-  const items = Array.isArray(node.children) ? node.children : [];
-  for (const item of items) {
-    const children = Array.isArray(item.children) ? item.children : [];
-    const runs: TextRun[] = [];
-    for (const child of children) {
-      if (child.type === "list") {
-        continue;
-      }
-      runs.push(...extractTextRuns(child));
-    }
-    const normalized = normalizeRuns(runs);
-    if (normalized.length > 0) {
-      const prefix = `${"  ".repeat(depth)}- `;
-      blocks.push({ kind: "text", text: `${prefix}${normalized.map((run) => run.text).join("")}`, runs: [{ text: prefix }, ...normalized] });
-    }
-    for (const child of children) {
-      if (child.type === "list") {
-        blocks.push(...listBlocks(child, depth + 1));
-      }
-    }
-  }
-  return blocks;
-}
-
-function nodeBlocks(node: any): SlideBlock[] {
-  switch (node.type) {
-    case "image":
-      return [{
-        kind: "image",
-        altText: typeof node.alt === "string" ? node.alt : "",
-        url: typeof node.url === "string" ? node.url : ""
-      }];
-    case "paragraph":
-      if (Array.isArray(node.children) && node.children.length === 1 && node.children[0]?.type === "image") {
-        return nodeBlocks(node.children[0]);
-      }
-      return textBlockFromRuns(extractTextRuns(node));
-    case "list":
-      return listBlocks(node);
-    case "code":
-      return String(node.value ?? "").split(/\r?\n/).map((line) => ({ kind: "text", text: `    ${line}`, runs: [{ text: `    ${line}` }] }));
-    case "blockquote":
-      return (node.children ?? []).flatMap((child: any) => nodeBlocks(child).map((block: SlideBlock) =>
-        block.kind === "text" ? { kind: "text", text: `> ${block.text}`, runs: [{ text: "> " }, ...block.runs] } : block
-      ));
-    case "table":
-      return [{ kind: "table", rows: tableRows(node) }];
-    case "thematicBreak":
-      return [{ kind: "text", text: "---", runs: [{ text: "---" }] }];
-    default: {
-      const text = normalizeLine(extractText(node));
-      return text ? [{ kind: "text", text, runs: [{ text }] }] : [];
-    }
-  }
-}
-
-export function markdownToSlides(markdown: string, options: MarkdownToPptxOptions = {}): SlideModel[] {
-  const tree = parseMarkdown(markdown);
-  const slides: SlideModel[] = [];
-  let current: SlideModel | undefined;
-
-  function ensureSlide(): SlideModel {
-    if (!current) {
-      current = { title: options.title ?? "Markdown deck", blocks: [], notes: [] };
-      slides.push(current);
-    }
-    return current;
-  }
-
-  for (const node of tree.children ?? []) {
-    if (node.type === "heading" && (node.depth === 1 || node.depth === 2)) {
-      current = { title: normalizeLine(extractText(node)) || "Untitled slide", blocks: [], notes: [] };
-      slides.push(current);
-      continue;
-    }
-    if (node.type === "html" && typeof node.value === "string") {
-      const notes = parseSpeakerNotesHtml(node.value);
-      if (notes.length > 0) {
-        ensureSlide().notes.push(...notes);
-        continue;
-      }
-    }
-    const blocks = nodeBlocks(node);
-    if (blocks.length > 0) {
-      ensureSlide().blocks.push(...blocks);
-    }
-  }
-
-  if (slides.length === 0) {
-    slides.push({ title: options.title ?? "Markdown deck", blocks: [], notes: [] });
-  }
-  if (options.title && slides[0]) {
-    slides[0].title = options.title;
-  }
-  return slides;
-}
-
 interface SlideRelationship {
   id: string;
   type: string;
@@ -202,54 +36,6 @@ interface SlideRelationship {
 interface SlideXmlResult {
   xml: string;
   relationships: SlideRelationship[];
-}
-
-interface MediaEntry {
-  path: string;
-  data: Uint8Array;
-}
-
-interface MediaManager {
-  entries: MediaEntry[];
-  addImage(image: ImageSlideBlock): { target: string; packagePath: string; extension: string } | undefined;
-}
-
-function createMediaManager(options: MarkdownToPptxOptions, diagnostics: MarkdownToPptxDiagnostic[]): MediaManager {
-  const entries: MediaEntry[] = [];
-  return {
-    entries,
-    addImage(image: ImageSlideBlock) {
-      const resolved = options.resolveImage?.(image.url, options.sourcePath);
-      if (!resolved) {
-        diagnostics.push({
-          severity: "warning",
-          code: "skipped-image",
-          message: `Markdown image was not embedded: ${image.url}`,
-          ...(options.sourcePath ? { source: options.sourcePath } : {})
-        });
-        return undefined;
-      }
-      const extension = normalizeImageExtension(resolved);
-      const fileName = `image${entries.length + 1}.${extension}`;
-      const packagePath = `ppt/media/${fileName}`;
-      entries.push({ path: packagePath, data: resolved.bytes });
-      return {
-        target: `../media/${fileName}`,
-        packagePath,
-        extension
-      };
-    }
-  };
-}
-
-function normalizeImageExtension(image: ResolvedImage): "png" | "jpg" | "gif" {
-  if (image.extension === "jpeg" || image.extension === "jpg") {
-    return "jpg";
-  }
-  if (image.extension === "gif") {
-    return "gif";
-  }
-  return "png";
 }
 
 function parseListRuns(runs: TextRun[]): { runs: TextRun[]; bullet: boolean; level: number } {
@@ -585,23 +371,6 @@ function viewPropsXml(): string {
 function tableStylesXml(): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:tblStyleLst xmlns:a="${DRAWING_NS}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
-}
-
-function collectDiagnostics(slides: SlideModel[], options: MarkdownToPptxOptions): MarkdownToPptxDiagnostic[] {
-  const diagnostics: MarkdownToPptxDiagnostic[] = [];
-  for (const slide of slides) {
-    for (const block of slide.blocks) {
-      if (block.kind === "text" && block.text.includes("<") && block.text.includes(">")) {
-        diagnostics.push({
-          severity: "warning",
-          code: "possible-raw-html-text",
-          message: "Raw HTML-like text was emitted as plain slide text.",
-          ...(options.sourcePath ? { source: options.sourcePath } : {})
-        });
-      }
-    }
-  }
-  return diagnostics;
 }
 
 export function markdownToPptxResult(markdown: string, options: MarkdownToPptxOptions = {}): MarkdownToPptxResult {
