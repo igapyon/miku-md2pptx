@@ -18,4 +18,4 @@ for (const arg of ["--version", "--help"]) {
   }
 }
 
-console.log("[smoke:bundle] ok");
+console.log("[smoke:bundle] cli ok");

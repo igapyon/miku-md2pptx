@@ -1,6 +1,6 @@
 {
   "name": "miku-md2pptx",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "cli": "npm run build --silent && node scripts/miku-md2pptx-cli.mjs",
     "smoke:version": "npm run build --silent && node scripts/miku-md2pptx-cli.mjs --version",
     "smoke:bundle": "node scripts/smoke-cli-bundle.mjs",
+    "smoke:runtime": "node scripts/smoke-runtime-bundle.mjs",
     "build": "node scripts/build-miku-md2pptx.mjs",
     "build:bundle": "node scripts/build-cli-bundle.mjs",
     "build:all": "npm run build && npm run build:bundle"

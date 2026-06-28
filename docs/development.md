@@ -68,6 +68,7 @@ Rejected or deferred decisions:
 - Web App surface is not initialized in this repository.
 - Java, Agent Skill, and MCP companion surfaces are not initialized.
 - GitHub Actions release workflow follows the sister `miku-md2xlsx` release
-  CLI bundle shape. It uploads `bundle/miku-md2pptx.mjs` and
-  `bundle/miku-md2pptx-sources.tgz` as versioned GitHub Release assets on
-  `v*` tag pushes.
+  CLI/runtime bundle shape. It runs when a `v*` GitHub Release is published
+  and uploads `bundle/miku-md2pptx.mjs`,
+  `bundle/miku-md2pptx-runtime.mjs`, and
+  `bundle/miku-md2pptx-sources.tgz` as versioned GitHub Release assets.

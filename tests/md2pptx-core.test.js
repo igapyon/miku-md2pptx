@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { markdownToSlides, markdownToPptx, markdownToPptxResult } from "../dist/core.js";
+import { markdownToSlides, markdownToPptx, markdownToPptxResult, mikuMd2PptxMetadata } from "../dist/core.js";
 import { unzipStoredEntries } from "./helpers/zip.js";
 
 const onePixelPng = new Uint8Array([
@@ -11,6 +11,16 @@ const onePixelPng = new Uint8Array([
 ]);
 
 describe("miku-md2pptx core", () => {
+  it("exports runtime metadata for downstream adapters", () => {
+    expect(mikuMd2PptxMetadata).toEqual({
+      productName: "miku-md2pptx",
+      artifactRole: "markdown-to-pptx-runtime",
+      primaryInput: "markdown",
+      primaryOutput: "pptx",
+      coreApi: ["markdownToSlides", "markdownToPptx", "markdownToPptxResult"]
+    });
+  });
+
   it("splits Markdown into slides at level 1 and 2 headings", () => {
     const slides = markdownToSlides("# One\n\nBody\n\n## Two\n\n- Item\n");
 

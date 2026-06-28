@@ -34,6 +34,14 @@ import type {
 export { type MarkdownToPptxDiagnostic, type MarkdownToPptxOptions, type MarkdownToPptxResult, type SlideModel } from "./types.ts";
 export { markdownToSlides } from "./slide-model.ts";
 
+export const mikuMd2PptxMetadata = {
+  productName: "miku-md2pptx",
+  artifactRole: "markdown-to-pptx-runtime",
+  primaryInput: "markdown",
+  primaryOutput: "pptx",
+  coreApi: ["markdownToSlides", "markdownToPptx", "markdownToPptxResult"]
+} as const;
+
 interface SlideXmlResult {
   xml: string;
   relationships: SlideRelationship[];
