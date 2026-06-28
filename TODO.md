@@ -14,12 +14,12 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
-- [x] Inspect `src/ts/` and `scripts/` for remaining low-risk refactoring
-      candidates before changing behavior.
-- [x] Keep any refactoring aligned with the compatibility-centered
-      `miku-md2pptx -> miku-pptx2md` scope in `GOAL.md`.
-- [x] Extract OOXML relationship helpers and static PPTX part generators from
-      `src/ts/core.ts` without changing conversion behavior.
+- [x] Inspect the existing Node main application release/bundle shape against
+      the active miku-soft maintenance workflow.
+- [x] Add an importable runtime bundle alongside the CLI bundle.
+- [x] Align the release workflow with GitHub Release `published` assets for
+      CLI bundle, runtime bundle, and source archive.
+- [x] Add runtime bundle metadata smoke coverage for downstream adapters.
 
 ### Blockers
 
@@ -52,3 +52,8 @@ If the same failure appears 3 times, stop and ask the user.
 - Verified generated `.pptx` files in Microsoft PowerPoint for macOS without
   repair for text-only, link, image, table, notes, and representative combined
   structural cases.
+- Added `bundle/miku-md2pptx-runtime.mjs` generation and runtime smoke checks.
+- Updated release asset workflow to run on GitHub Release publish and attach
+  CLI bundle, runtime bundle, and source archive.
+- Exported `mikuMd2PptxMetadata` from the core/runtime bundle and verified it
+  in runtime smoke tests.

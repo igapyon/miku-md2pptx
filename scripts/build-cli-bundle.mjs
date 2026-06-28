@@ -13,6 +13,10 @@ const bundleDir = path.resolve(rootDir, "bundle");
 const productName = "miku-md2pptx";
 const sourceArchiveCandidates = [
   ".gitignore",
+  ".github",
+  "DECISIONS.md",
+  "GOAL.md",
+  "HANDOFF.md",
   "LICENSE",
   "README.md",
   "TODO.md",
@@ -47,7 +51,8 @@ async function createSourceArchive(outputPath) {
 
 async function main() {
   await fs.mkdir(bundleDir, { recursive: true });
-  const outputPath = path.resolve(bundleDir, `${productName}.mjs`);
+  const cliOutputPath = path.resolve(bundleDir, `${productName}.mjs`);
+  const runtimeOutputPath = path.resolve(bundleDir, `${productName}-runtime.mjs`);
   const sourcesPath = path.resolve(bundleDir, `${productName}-sources.tgz`);
 
   await build({
@@ -66,13 +71,22 @@ async function main() {
     format: "esm",
     platform: "node",
     target: "node20",
-    outfile: outputPath
+    outfile: cliOutputPath
   });
-  await fs.chmod(outputPath, 0o755);
+  await build({
+    entryPoints: ["src/ts/core.ts"],
+    bundle: true,
+    format: "esm",
+    platform: "node",
+    target: "node20",
+    outfile: runtimeOutputPath
+  });
+  await fs.chmod(cliOutputPath, 0o755);
   await createSourceArchive(sourcesPath);
 
   console.log("[build:bundle] generated dist/core.js");
-  console.log(`[build:bundle] generated ${path.relative(rootDir, outputPath)}`);
+  console.log(`[build:bundle] generated ${path.relative(rootDir, cliOutputPath)}`);
+  console.log(`[build:bundle] generated ${path.relative(rootDir, runtimeOutputPath)}`);
   console.log(`[build:bundle] generated ${path.relative(rootDir, sourcesPath)}`);
 }
 

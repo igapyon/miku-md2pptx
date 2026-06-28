@@ -103,6 +103,7 @@ Build and smoke-test the single-file CLI bundle:
 ```bash
 npm run build:bundle
 npm run smoke:bundle
+npm run smoke:runtime
 ```
 
 `workplace/` is a local scratch area for sister repository checkouts, generated
@@ -110,6 +111,10 @@ verification files, and temporary artifacts. Only `workplace/.gitkeep` is
 tracked.
 
 Generated build outputs under `dist/`, `bundle/`, and `coverage/` are ignored.
+
+GitHub Release assets are built when a `v*` GitHub Release is published. The
+release workflow attaches the CLI bundle, importable runtime bundle, and source
+archive for the release tag.
 
 ## License
 
