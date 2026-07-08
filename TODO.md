@@ -14,12 +14,13 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
-- [x] Inspect the existing Node main application release/bundle shape against
-      the active miku-soft maintenance workflow.
-- [x] Add an importable runtime bundle alongside the CLI bundle.
-- [x] Align the release workflow with GitHub Release `published` assets for
-      CLI bundle, runtime bundle, and source archive.
-- [x] Add runtime bundle metadata smoke coverage for downstream adapters.
+- [x] Inspect the existing Markdown-to-PPTX generation path for template layout
+      support.
+- [x] Add initial `--template <pptx>` support using the first title+body slide
+      layout and without copying existing template slides.
+- [x] Add focused core and CLI tests for template-based generation.
+- [x] Update CLI help and Markdown docs with the template-mode execution
+      contract for AI agents and human users.
 
 ### Blockers
 
@@ -57,3 +58,11 @@ If the same failure appears 3 times, stop and ask the user.
   CLI bundle, runtime bundle, and source archive.
 - Exported `mikuMd2PptxMetadata` from the core/runtime bundle and verified it
   in runtime smoke tests.
+- Added initial template-based generation. `--template` uses template design
+  information and the first title+body slide layout for Markdown-generated
+  slides; existing template slides are not copied.
+- Refined template-mode generation so generated slides reuse the selected
+  layout's placeholder tags, template text sizing can be inherited, and native
+  tables are positioned relative to the resolved body placeholder when
+  possible. Detailed overlap and final visual polish remain a PowerPoint
+  adjustment step.

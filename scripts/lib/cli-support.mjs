@@ -13,15 +13,32 @@ function usage() {
   return `miku-md2pptx converts a Markdown file into a PowerPoint .pptx deck.
 
 Usage:
-  miku-md2pptx <input.md> --out <output.pptx>
+  miku-md2pptx <input.md> --out <output.pptx> [--template <template.pptx>]
   miku-md2pptx --help
   miku-md2pptx --version
 
 Options:
-  --out <path>       Output .pptx path.
-  --title <text>     Override the generated presentation title.
-  --help             Show this help.
-  --version          Show the package version.
+  --out <path>             Output .pptx path.
+  --template <path>        Use a PowerPoint template's design information and
+                           first title+body slide layout. Existing template
+                           slides are not copied.
+  --title <text>           Override the generated presentation title.
+  --help                   Show this help.
+  --version                Show the package version.
+
+Template behavior:
+  --template reads slide size, theme, slide masters, slide layouts, and related
+  design parts from the template PPTX.
+  Generated output contains only slides created from the Markdown input.
+  Existing slides in the template are not copied, prepended, appended, or
+  edited.
+  Generated slides reference the first title+body/content layout found in the
+  template. If no such layout is found, the converter tries a title-only layout,
+  then falls back to the built-in generated layout with a diagnostic.
+  If the template PPTX cannot be read, conversion fails instead of silently
+  falling back.
+  Template mode is structural, not pixel-perfect. Tables, images, and dense
+  content may need final positioning in PowerPoint.
 
 Markdown handling notes:
   Heading level 1 and 2 blocks start new slides.
@@ -31,12 +48,13 @@ Markdown handling notes:
 
 Examples:
   npm run cli -- ./sample.md --out ./sample.pptx
+  npm run cli -- ./sample.md --out ./sample.pptx --template ./template.pptx
   npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
 `;
 }
 
 function parseArgs(args) {
-  const options = { input: undefined, out: undefined, title: undefined };
+  const options = { input: undefined, out: undefined, title: undefined, template: undefined };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
@@ -47,10 +65,23 @@ function parseArgs(args) {
     }
     if (arg === "--out") {
       options.out = args[++i];
+      if (!options.out) {
+        throw new Error("--out requires a path.");
+      }
       continue;
     }
     if (arg === "--title") {
       options.title = args[++i];
+      if (!options.title) {
+        throw new Error("--title requires text.");
+      }
+      continue;
+    }
+    if (arg === "--template") {
+      options.template = args[++i];
+      if (!options.template) {
+        throw new Error("--template requires a .pptx path.");
+      }
       continue;
     }
     if (arg.startsWith("--")) {
@@ -108,10 +139,12 @@ export async function main(args) {
 
   const inputPath = path.resolve(rootDir, options.input);
   const outputPath = path.resolve(rootDir, options.out);
+  const templatePath = options.template ? path.resolve(rootDir, options.template) : undefined;
   const markdown = await readFile(inputPath, "utf8");
   const result = markdownToPptxResult(markdown, {
     title: options.title,
     sourcePath: inputPath,
+    ...(templatePath ? { templatePptx: await readFile(templatePath) } : {}),
     resolveImage: resolveLocalImage
   });
   await mkdir(path.dirname(outputPath), { recursive: true });

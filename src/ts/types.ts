@@ -1,6 +1,7 @@
 export interface MarkdownToPptxOptions {
   title?: string;
   sourcePath?: string;
+  templatePptx?: Uint8Array;
   resolveImage?: (url: string, sourcePath?: string) => ResolvedImage | undefined;
 }
 
@@ -10,7 +11,7 @@ export interface MarkdownToPptxResult {
 }
 
 export interface MarkdownToPptxDiagnostic {
-  severity: "warning" | "error";
+  severity: "info" | "warning" | "error";
   code: string;
   message: string;
   source?: string;
