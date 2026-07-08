@@ -97,4 +97,22 @@ describe("miku-md2pptx core", () => {
       })
     ]);
   });
+
+  it("uses a template title/body layout without copying existing template slides", () => {
+    const templatePptx = markdownToPptx("# Template cover\n\nTemplate-only body");
+    const result = markdownToPptxResult("# Generated deck\n\nGenerated body", { templatePptx });
+    const entries = unzipStoredEntries(result.pptx);
+
+    expect(result.diagnostics).toContainEqual(expect.objectContaining({
+      severity: "info",
+      code: "template-layout-selected"
+    }));
+    expect(entries.get("ppt/slides/slide1.xml")).toContain("Generated deck");
+    expect(entries.get("ppt/slides/slide1.xml")).toContain("Generated body");
+    expect(entries.get("ppt/slides/slide1.xml")).not.toContain(' sz="2400"');
+    expect(entries.get("ppt/slides/slide1.xml")).not.toContain(' sz="1800"');
+    expect(entries.get("ppt/slides/slide1.xml")).not.toContain("Template-only body");
+    expect(entries.get("ppt/slides/_rels/slide1.xml.rels")).toContain("Target=\"../slideLayouts/slideLayout1.xml\"");
+    expect(entries.get("ppt/presentation.xml")).not.toContain("Template cover");
+  });
 });

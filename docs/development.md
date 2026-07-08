@@ -45,6 +45,30 @@ Reference decisions from `miku-pptx2md`:
   section and notes summary count.
 - Return conversion diagnostics from the core result and print CLI warnings for
   skipped images and HTML-like text.
+- For `--template`, read the template PPTX as design input only. Existing
+  template slides are not copied into the generated deck.
+- Select the first template slide layout with title and body/content
+  placeholders. Generated slides reference that layout, preserving its slide
+  master and theme relationship. If no title/body layout is found, fall back to
+  the first title-only layout; if no title layout is found, use the default
+  generated layout and report a diagnostic.
+- Template layout selection failure is not the same as template file failure.
+  If the template file cannot be read as a PPTX package, conversion fails. If
+  the PPTX can be read but no usable title/body layout is found, conversion can
+  fall back to the built-in generated layout with a diagnostic.
+- Generated template-mode slides reuse the actual title and body placeholder
+  tags from the selected layout when possible. This matters for templates whose
+  body placeholder is identified by `idx` rather than `type="body"`.
+- When a template is used, generated text runs do not set explicit font sizes;
+  PowerPoint resolves text size through the selected layout, slide master, and
+  theme. Non-template generation keeps the built-in 24pt title and 18pt body
+  sizes.
+- Template-mode tables use the selected body placeholder geometry when it can
+  be resolved from the slide layout or parent slide master. Table flow is still
+  simple: tables are positioned inside that body area with a small offset after
+  preceding text blocks rather than using full PowerPoint text-flow behavior.
+- Template mode deliberately stops short of full visual layout. Tables, images,
+  and dense content may need manual positioning in PowerPoint after generation.
 - Do not claim full round-trip behavior until explicit fixtures and tests cover
   `miku-md2pptx -> miku-pptx2md` expectations.
 
@@ -59,6 +83,9 @@ Presentation software check:
 
 - Microsoft PowerPoint for macOS opens generated text-only, link, image, table,
   speaker-note, and representative combined structural decks without repair.
+- Microsoft PowerPoint for macOS was also used for a local template experiment
+  with `workplace/サンプル.pptx`; generated slides used the selected template
+  layout and preserved the "existing template slides are not copied" behavior.
 - LibreOffice is not installed in the current environment.
 - Keynote is installed, but automated AppleScript validation was not reliable
   enough to use as completion evidence.

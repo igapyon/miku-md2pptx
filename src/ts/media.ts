@@ -25,8 +25,9 @@ function normalizeImageExtension(image: ResolvedImage): "png" | "jpg" | "gif" {
   return "png";
 }
 
-export function createMediaManager(options: MarkdownToPptxOptions, diagnostics: MarkdownToPptxDiagnostic[]): MediaManager {
+export function createMediaManager(options: MarkdownToPptxOptions, diagnostics: MarkdownToPptxDiagnostic[], startImageIndex = 1): MediaManager {
   const entries: MediaEntry[] = [];
+  let nextImageIndex = startImageIndex;
   return {
     entries,
     addImage(image: ImageSlideBlock) {
@@ -41,7 +42,8 @@ export function createMediaManager(options: MarkdownToPptxOptions, diagnostics: 
         return undefined;
       }
       const extension = normalizeImageExtension(resolved);
-      const fileName = `image${entries.length + 1}.${extension}`;
+      const fileName = `image${nextImageIndex}.${extension}`;
+      nextImageIndex += 1;
       const packagePath = `ppt/media/${fileName}`;
       entries.push({ path: packagePath, data: resolved.bytes });
       return {

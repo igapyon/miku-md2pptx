@@ -20,6 +20,7 @@ The first implementation supports:
 - local PNG, JPEG, and GIF images referenced by relative Markdown paths
 - speaker notes using `<!-- speaker-notes: ... -->` HTML comments
 - Markdown tables as simple native PowerPoint tables
+- PowerPoint template design reuse through `--template <pptx>`
 - conversion diagnostics for skipped images and HTML-like text warnings
 
 The generated slide titles, body text, bullet lists, external hyperlinks,
@@ -37,8 +38,9 @@ Known limitations:
 - remote image URLs, absolute image paths, missing image files, and unsupported
   image formats are skipped with warnings
 - raw HTML is not fully converted
-- detailed theme, template, speaker notes layout, and slide master
-  customization are not supported yet
+- detailed theme editing, template placeholder replacement, multi-layout
+  selection, speaker notes layout, and slide master customization are not
+  supported yet
 
 ## CLI Use
 
@@ -60,6 +62,24 @@ Override the presentation title:
 npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
 ```
 
+Use a PowerPoint template:
+
+```bash
+npm run cli -- ./sample.md --out ./sample.pptx --template ./template.pptx
+```
+
+`--template` reads design information from the template PPTX and uses the first
+slide layout that has title and body/content placeholders. Generated slides
+reference that layout, so they inherit its slide master and theme. The output
+contains only slides generated from the Markdown input; existing slides in the
+template are not copied.
+
+Template-based generation is structural rather than pixel-perfect. It reuses
+slide size, theme, masters, layouts, and placeholder geometry where practical,
+but it does not edit existing template slides or perform full PowerPoint
+layout flow. Tables, images, dense text, and final visual polish may still need
+manual adjustment in PowerPoint.
+
 Show help or version:
 
 ```bash
@@ -75,7 +95,9 @@ compatibility fixture verifies `miku-md2pptx -> miku-pptx2md` extraction for
 slide order, slide titles, body text, bullet lists, external hyperlinks, local
 image assets, speaker notes, and simple tables. The CLI reports conversion
 warnings such as skipped images on stderr. PowerPoint repair checks currently
-cover the same supported structural scope.
+cover the same supported structural scope. Template mode has been smoke-tested
+with a local PowerPoint template under `workplace/`; generated slides reference
+the selected template layout, and existing template slides are not copied.
 
 Related miku-soft applications:
 

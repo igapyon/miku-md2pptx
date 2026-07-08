@@ -1,9 +1,12 @@
+import { inflateRawSync } from "node:zlib";
+
 export interface ZipFileEntry {
   path: string;
   data: Uint8Array | string;
 }
 
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 const crcTable = new Uint32Array(256);
 for (let i = 0; i < 256; i += 1) {
@@ -36,6 +39,14 @@ function writeUint32(buffer: Uint8Array, offset: number, value: number): void {
   buffer[offset + 1] = (value >>> 8) & 0xff;
   buffer[offset + 2] = (value >>> 16) & 0xff;
   buffer[offset + 3] = (value >>> 24) & 0xff;
+}
+
+function readUint16(buffer: Uint8Array, offset: number): number {
+  return buffer[offset] | (buffer[offset + 1] << 8);
+}
+
+function readUint32(buffer: Uint8Array, offset: number): number {
+  return (buffer[offset] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
 }
 
 function concat(parts: Uint8Array[]): Uint8Array {
@@ -111,4 +122,61 @@ export function createZip(entries: ZipFileEntry[]): Uint8Array {
   writeUint16(end, 20, 0);
 
   return concat([...localParts, centralDirectory, end]);
+}
+
+export function readZipEntries(data: Uint8Array): Map<string, Uint8Array> {
+  let eocdOffset = -1;
+  for (let offset = data.length - 22; offset >= 0; offset -= 1) {
+    if (readUint32(data, offset) === 0x06054b50) {
+      eocdOffset = offset;
+      break;
+    }
+  }
+  if (eocdOffset < 0) {
+    throw new Error("Template PPTX is not a readable ZIP package.");
+  }
+
+  const entryCount = readUint16(data, eocdOffset + 10);
+  let centralOffset = readUint32(data, eocdOffset + 16);
+  const entries = new Map<string, Uint8Array>();
+
+  for (let index = 0; index < entryCount; index += 1) {
+    if (readUint32(data, centralOffset) !== 0x02014b50) {
+      throw new Error("Template PPTX has an invalid ZIP central directory.");
+    }
+    const method = readUint16(data, centralOffset + 10);
+    const compressedSize = readUint32(data, centralOffset + 20);
+    const uncompressedSize = readUint32(data, centralOffset + 24);
+    const fileNameLength = readUint16(data, centralOffset + 28);
+    const extraLength = readUint16(data, centralOffset + 30);
+    const commentLength = readUint16(data, centralOffset + 32);
+    const localHeaderOffset = readUint32(data, centralOffset + 42);
+    const fileName = decoder.decode(data.slice(centralOffset + 46, centralOffset + 46 + fileNameLength));
+
+    if (readUint32(data, localHeaderOffset) !== 0x04034b50) {
+      throw new Error(`Template PPTX has an invalid ZIP local header for ${fileName}.`);
+    }
+    const localNameLength = readUint16(data, localHeaderOffset + 26);
+    const localExtraLength = readUint16(data, localHeaderOffset + 28);
+    const payloadStart = localHeaderOffset + 30 + localNameLength + localExtraLength;
+    const compressed = data.slice(payloadStart, payloadStart + compressedSize);
+
+    if (!fileName.endsWith("/")) {
+      if (method === 0) {
+        entries.set(fileName, compressed);
+      } else if (method === 8) {
+        const inflated = inflateRawSync(compressed);
+        if (inflated.byteLength !== uncompressedSize) {
+          throw new Error(`Template PPTX entry has an unexpected size after inflate: ${fileName}.`);
+        }
+        entries.set(fileName, new Uint8Array(inflated));
+      } else {
+        throw new Error(`Template PPTX uses unsupported ZIP compression method ${method}: ${fileName}.`);
+      }
+    }
+
+    centralOffset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  return entries;
 }
