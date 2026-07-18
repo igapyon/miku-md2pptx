@@ -1,3 +1,8 @@
+import {
+  buildOpcRelationshipsXml,
+  escapeXmlAttribute
+} from "../vendor/miku-ms-office-core-0.6.0.mjs";
+
 export const PRESENTATION_NS = "http://schemas.openxmlformats.org/presentationml/2006/main";
 export const REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 export const DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
@@ -10,11 +15,7 @@ export interface SlideRelationship {
 }
 
 export function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return escapeXmlAttribute(value);
 }
 
 export function createHyperlinkRel(relationships: SlideRelationship[], href: string): string {
@@ -43,8 +44,5 @@ export function createImageRel(relationships: SlideRelationship[], target: strin
 }
 
 export function relsXml(relationships: SlideRelationship[]): string {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-${relationships.map((rel) => `  <Relationship Id="${rel.id}" Type="${rel.type}" Target="${xmlEscape(rel.target)}"${rel.targetMode ? ` TargetMode="${rel.targetMode}"` : ""}/>`).join("\n")}
-</Relationships>`;
+  return buildOpcRelationshipsXml(relationships);
 }

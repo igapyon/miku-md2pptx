@@ -87,6 +87,25 @@ npm run cli -- --help
 npm run cli -- --version
 ```
 
+### CLI execution contract
+
+- Relative input, output, template, and local image paths are resolved from the
+  current working directory.
+- Output parent directories are created when needed. Existing output files are
+  replaced without prompting.
+- Successful conversion exits with code `0` and reports the written path on
+  stdout.
+- Conversion diagnostics are written to stderr as
+  `<severity>: <code>: <message>`. Warnings do not by themselves make the
+  command fail; fatal errors use a nonzero exit code.
+- Processing is local and does not require network access.
+
+Speaker notes can be written as:
+
+```markdown
+<!-- speaker-notes: Remind the audience about the source. -->
+```
+
 ## Current Status
 
 This repository is in first-cut development. It creates `.pptx` files from
@@ -133,6 +152,11 @@ verification files, and temporary artifacts. Only `workplace/.gitkeep` is
 tracked.
 
 Generated build outputs under `dist/`, `bundle/`, and `coverage/` are ignored.
+
+Low-level ZIP, OPC relationship, and XML sanitization support is vendored from
+`miku-ms-office-core` `v0.6.0` under `src/vendor/`. PowerPoint-specific document
+meaning and Markdown conversion policy remain in this repository's product
+core.
 
 GitHub Release assets are built when a `v*` GitHub Release is published. The
 release workflow attaches the CLI bundle, importable runtime bundle, and source

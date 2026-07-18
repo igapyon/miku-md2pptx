@@ -35,6 +35,14 @@ If the same failure appears 3 times, stop and ask the user.
 
 ## Done
 
+- Expanded CLI help and README documentation with an AI-readable execution
+  contract covering path resolution, overwrite behavior, stdout/stderr, exit
+  codes, image restrictions, and speaker-note syntax.
+- Corrected the generated title-and-content slide layout type to the valid OOXML
+  `obj` value so Microsoft PowerPoint does not repair the layout type.
+- Adopted vendored `miku-ms-office-core` `v0.6.0` for low-level ZIP, OPC
+  relationship, and XML sanitization plumbing, including supplementary Unicode
+  coverage.
 - Refactored `src/ts/core.ts` by moving OOXML relationship helpers to
   `src/ts/ooxml.ts` and static PPTX part generators to
   `src/ts/pptx-static-parts.ts`.
