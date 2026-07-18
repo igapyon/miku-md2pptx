@@ -1,13 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { markdownToPptxResult } from "../../dist/core.js";
 import packageJson from "../../package.json" with { type: "json" };
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, "../..");
 
 function usage() {
   return `miku-md2pptx converts a Markdown file into a PowerPoint .pptx deck.
@@ -23,8 +18,18 @@ Options:
                            first title+body slide layout. Existing template
                            slides are not copied.
   --title <text>           Override the generated presentation title.
-  --help                   Show this help.
+  --help, -h               Show this help.
   --version                Show the package version.
+
+Execution contract:
+  Input, output, template, and local image paths are processed locally. Relative
+  CLI paths are resolved from the current working directory.
+  The output parent directory is created when needed. An existing output file
+  is replaced without prompting.
+  On success, the command exits 0 and prints "Wrote <path>" to stdout.
+  Conversion diagnostics use "<severity>: <code>: <message>" on stderr. A
+  warning does not by itself make the command fail. Fatal errors use stderr and
+  a nonzero exit code.
 
 Template behavior:
   --template reads slide size, theme, slide masters, slide layouts, and related
@@ -42,7 +47,12 @@ Template behavior:
 
 Markdown handling notes:
   Heading level 1 and 2 blocks start new slides.
-  Paragraphs, lists, code blocks, and tables become simple editable slide text.
+  Paragraphs, lists, fenced code blocks, and simple tables become editable
+  PowerPoint content. Markdown links become external hyperlinks.
+  Relative PNG, JPEG, and GIF images under the input file's directory can be
+  embedded. Remote URLs, absolute paths, paths outside that directory, missing
+  files, and unsupported formats are skipped with a warning.
+  <!-- speaker-notes: text --> adds speaker notes to the current slide.
   The first implementation prioritizes structure and local generation over
   pixel-perfect PowerPoint layout.
 
@@ -137,9 +147,10 @@ export async function main(args) {
     return;
   }
 
-  const inputPath = path.resolve(rootDir, options.input);
-  const outputPath = path.resolve(rootDir, options.out);
-  const templatePath = options.template ? path.resolve(rootDir, options.template) : undefined;
+  const workingDir = process.cwd();
+  const inputPath = path.resolve(workingDir, options.input);
+  const outputPath = path.resolve(workingDir, options.out);
+  const templatePath = options.template ? path.resolve(workingDir, options.template) : undefined;
   const markdown = await readFile(inputPath, "utf8");
   const result = markdownToPptxResult(markdown, {
     title: options.title,
@@ -152,5 +163,5 @@ export async function main(args) {
   for (const diagnostic of result.diagnostics) {
     process.stderr.write(`${diagnostic.severity}: ${diagnostic.code}: ${diagnostic.message}\n`);
   }
-  process.stdout.write(`Wrote ${path.relative(rootDir, outputPath)}\n`);
+  process.stdout.write(`Wrote ${path.relative(workingDir, outputPath)}\n`);
 }

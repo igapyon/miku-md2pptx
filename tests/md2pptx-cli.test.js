@@ -21,7 +21,32 @@ describe("miku-md2pptx CLI", () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("converts a Markdown file into a PowerPoint .pptx deck");
     expect(result.stdout).toContain("Examples:");
+    expect(result.stdout).toContain("Execution contract:");
+    expect(result.stdout).toContain("replaced without prompting");
+    expect(result.stdout).toContain("Conversion diagnostics");
+    expect(result.stdout).toContain("nonzero exit code");
     expect(result.stdout).toContain("Markdown handling notes:");
+    expect(result.stdout).toContain("<!-- speaker-notes: text -->");
+  });
+
+  it("resolves relative paths from the current working directory", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "miku-md2pptx-cwd-"));
+    try {
+      await writeFile(join(dir, "input.md"), "# Working directory\n\nBody\n", "utf8");
+      const result = spawnSync(process.execPath, [
+        join(process.cwd(), "scripts/miku-md2pptx-cli.mjs"),
+        "input.md",
+        "--out",
+        "nested/out.pptx"
+      ], { cwd: dir, encoding: "utf8" });
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain("Wrote nested/out.pptx");
+      const entries = unzipStoredEntries(await readFile(join(dir, "nested/out.pptx")));
+      expect(entries.get("ppt/slides/slide1.xml")).toContain("Working directory");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("writes a pptx file", async () => {

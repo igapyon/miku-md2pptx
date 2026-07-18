@@ -83,6 +83,12 @@ Presentation software check:
 
 - Microsoft PowerPoint for macOS opens generated text-only, link, image, table,
   speaker-note, and representative combined structural decks without repair.
+- On 2026-07-18, a fresh non-template deck generated with the corrected OOXML
+  slide layout type `obj` opened without repair. Saving it in PowerPoint kept
+  `type="obj"`; reverse conversion of the generated and PowerPoint-saved files
+  produced identical Markdown and structural summary counts. PowerPoint added
+  only its normal package defaults, view/presentation properties, compression,
+  and modification metadata.
 - Microsoft PowerPoint for macOS was also used for a local template experiment
   with `workplace/サンプル.pptx`; generated slides used the selected template
   layout and preserved the "existing template slides are not copied" behavior.
@@ -99,3 +105,13 @@ Rejected or deferred decisions:
   and uploads `bundle/miku-md2pptx.mjs`,
   `bundle/miku-md2pptx-runtime.mjs`, and
   `bundle/miku-md2pptx-sources.tgz` as versioned GitHub Release assets.
+
+Vendored low-level Office runtime:
+
+- `miku-ms-office-core` `v0.6.0`
+- runtime: `src/vendor/miku-ms-office-core-0.6.0.mjs`
+- source map: `src/vendor/miku-ms-office-core-0.6.0.mjs.map`
+- local TypeScript declarations: `src/vendor/miku-ms-office-core-0.6.0.d.mts`
+- ownership boundary: generic ZIP, OPC relationship, and XML sanitization
+  plumbing is delegated to the vendored core; PPTX structure and Markdown
+  conversion decisions remain product-owned

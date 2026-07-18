@@ -35,8 +35,20 @@ describe("miku-md2pptx core", () => {
 
     expect(entries.get("[Content_Types].xml")).toContain("presentationml.presentation.main+xml");
     expect(entries.get("ppt/_rels/presentation.xml.rels")).toContain("slides/slide1.xml");
+    expect(entries.get("ppt/slideLayouts/slideLayout1.xml")).toContain('type="obj"');
+    expect(entries.get("ppt/slideLayouts/slideLayout1.xml")).not.toContain('type="titleAndContent"');
     expect(entries.get("ppt/slides/slide1.xml")).toContain("Deck");
     expect(entries.get("ppt/slides/slide2.xml")).toContain("Body");
+  });
+
+  it("preserves supplementary Unicode and removes invalid XML characters", () => {
+    const entries = unzipStoredEntries(markdownToPptx("# Deck 😀\n\nBody\u0001 text \uD800"));
+    const slideXml = entries.get("ppt/slides/slide1.xml");
+
+    expect(slideXml).toContain("Deck 😀");
+    expect(slideXml).toContain("Body text ");
+    expect(slideXml).not.toContain("\u0001");
+    expect(slideXml).not.toContain("\uFFFD");
   });
 
   it("writes Markdown tables as native PowerPoint table parts", () => {
