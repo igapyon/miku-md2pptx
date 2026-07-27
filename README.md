@@ -7,6 +7,7 @@ uploaded to a server.
 
 The conversion goal is practical slide structure, not pixel-perfect PowerPoint
 layout.
+Generated PPTX package entries use ZIP DEFLATE compression.
 
 ## What It Converts
 
@@ -44,28 +45,33 @@ Known limitations:
 
 ## CLI Use
 
-Install dependencies once:
+Download the CLI Release Asset and run it directly from the download directory:
 
 ```bash
-npm install
-```
-
-Convert a Markdown file:
-
-```bash
-npm run cli -- ./sample.md --out ./sample.pptx
-```
-
-Override the presentation title:
-
-```bash
-npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
+node miku-md2pptx-0.7.0.mjs input.md --out output.pptx
 ```
 
 Use a PowerPoint template:
 
 ```bash
+node miku-md2pptx-0.7.0.mjs input.md --out output.pptx --template template.pptx
+```
+
+Show help or version:
+
+```bash
+node miku-md2pptx-0.7.0.mjs --help
+node miku-md2pptx-0.7.0.mjs --version
+```
+
+For development from a source checkout, install dependencies once and use the
+npm script:
+
+```bash
+npm install
+npm run cli -- ./sample.md --out ./sample.pptx
 npm run cli -- ./sample.md --out ./sample.pptx --template ./template.pptx
+npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
 ```
 
 `--template` reads design information from the template PPTX and uses the first
@@ -80,24 +86,24 @@ but it does not edit existing template slides or perform full PowerPoint
 layout flow. Tables, images, dense text, and final visual polish may still need
 manual adjustment in PowerPoint.
 
-Show help or version:
-
-```bash
-npm run cli -- --help
-npm run cli -- --version
-```
-
 ### CLI execution contract
 
 - Relative input, output, template, and local image paths are resolved from the
   current working directory.
 - Output parent directories are created when needed. Existing output files are
   replaced without prompting.
-- Successful conversion exits with code `0` and reports the written path on
-  stdout.
+- The generated `.pptx` specified by `--out` is the only conversion artifact.
+  `dist/` and `bundle/` are repository build outputs, not files created by a
+  normal conversion.
+- stdout contains human-readable success status, help, or version information.
+  It is not a stable machine-readable data format.
 - Conversion diagnostics are written to stderr as
-  `<severity>: <code>: <message>`. Warnings do not by themselves make the
-  command fail; fatal errors use a nonzero exit code.
+  `<severity>: <code>: <message>`. CLI usage errors and processing failures
+  are also written to stderr. Warnings do not by themselves make the command
+  fail.
+- Exit code `0` means conversion success, `--help`, or `--version`; `1` means
+  an input, output, template, or conversion failure; and `2` means invalid CLI
+  usage such as missing arguments or an unknown option.
 - Processing is local and does not require network access.
 
 Speaker notes can be written as:

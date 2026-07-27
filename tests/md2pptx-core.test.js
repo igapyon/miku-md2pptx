@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { markdownToSlides, markdownToPptx, markdownToPptxResult, mikuMd2PptxMetadata } from "../dist/core.js";
-import { unzipStoredEntries } from "./helpers/zip.js";
+import { unzipStoredEntries, zipCompressionMethods } from "./helpers/zip.js";
 
 const onePixelPng = new Uint8Array([
   137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
@@ -31,7 +31,9 @@ describe("miku-md2pptx core", () => {
   });
 
   it("creates a pptx package with presentation and slide parts", () => {
-    const entries = unzipStoredEntries(markdownToPptx("# Deck\n\n## Slide\n\nBody"));
+    const pptx = markdownToPptx("# Deck\n\n## Slide\n\nBody");
+    const entries = unzipStoredEntries(pptx);
+    expect(new Set(zipCompressionMethods(pptx))).toEqual(new Set([8]));
 
     expect(entries.get("[Content_Types].xml")).toContain("presentationml.presentation.main+xml");
     expect(entries.get("ppt/_rels/presentation.xml.rels")).toContain("slides/slide1.xml");
@@ -115,6 +117,7 @@ describe("miku-md2pptx core", () => {
     const result = markdownToPptxResult("# Generated deck\n\nGenerated body", { templatePptx });
     const entries = unzipStoredEntries(result.pptx);
 
+    expect(new Set(zipCompressionMethods(result.pptx))).toEqual(new Set([8]));
     expect(result.diagnostics).toContainEqual(expect.objectContaining({
       severity: "info",
       code: "template-layout-selected"
