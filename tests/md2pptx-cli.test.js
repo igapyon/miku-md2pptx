@@ -21,12 +21,49 @@ describe("miku-md2pptx CLI", () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("converts a Markdown file into a PowerPoint .pptx deck");
     expect(result.stdout).toContain("Examples:");
+    expect(result.stdout).toContain(`node miku-md2pptx-${packageJson.version}.mjs input.md --out output.pptx`);
+    expect(result.stdout).toContain("Generated artifacts:");
+    expect(result.stdout).toContain("stdout                  Human-readable");
+    expect(result.stdout).toContain("stderr                  Usage errors");
+    expect(result.stdout).toContain("not a stable machine-readable data format");
+    expect(result.stdout).toContain("Exit codes:");
+    expect(result.stdout).toContain("2  CLI usage error");
     expect(result.stdout).toContain("Execution contract:");
     expect(result.stdout).toContain("replaced without prompting");
     expect(result.stdout).toContain("Conversion diagnostics");
-    expect(result.stdout).toContain("nonzero exit code");
+    expect(result.stdout).toContain("1  Input, output, template, or conversion processing failed");
     expect(result.stdout).toContain("Markdown handling notes:");
     expect(result.stdout).toContain("<!-- speaker-notes: text -->");
+    expect(result.stdout).not.toContain("npm run");
+  });
+
+  it.each([
+    [[], "Input Markdown path is required"],
+    [["--unknown"], "Unknown option: --unknown"],
+    [["-x"], "Unknown option: -x"],
+    [["input.md"], "--out is required"],
+    [["input.md", "--out", "--unknown"], "--out requires a path"],
+    [["input.md", "--out", "output.pptx", "--template", "--unknown"], "--template requires a .pptx path"],
+    [["input.md", "--out", "output.pptx", "--title", "--unknown"], "--title requires text"]
+  ])("returns exit code 2 for invalid CLI usage", (args, expectedMessage) => {
+    const result = spawnSync(process.execPath, ["scripts/miku-md2pptx-cli.mjs", ...args], { encoding: "utf8" });
+
+    expect(result.status).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(expectedMessage);
+  });
+
+  it("returns exit code 1 when the input file cannot be read", () => {
+    const result = spawnSync(process.execPath, [
+      "scripts/miku-md2pptx-cli.mjs",
+      "missing-input.md",
+      "--out",
+      "unused-output.pptx"
+    ], { encoding: "utf8" });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("missing-input.md");
   });
 
   it("resolves relative paths from the current working directory", async () => {

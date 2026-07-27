@@ -35,6 +35,13 @@ If the same failure appears 3 times, stop and ask the user.
 
 ## Done
 
+- Enabled ZIP DEFLATE for every generated PPTX entry for GitHub Issue #10,
+  including explicit normal and template-path compression tests and a
+  PowerPoint for macOS opening check of version `0.7.0` output.
+- Updated the Node CLI help for GitHub Issue #9 with Release Asset direct-run
+  commands, conversion-only generated artifacts, overwrite behavior,
+  stdout/stderr roles, and explicit exit codes; CLI usage errors now exit `2`
+  while input, output, template, and conversion failures exit `1`.
 - Expanded CLI help and README documentation with an AI-readable execution
   contract covering path resolution, overwrite behavior, stdout/stderr, exit
   codes, image restrictions, and speaker-note syntax.

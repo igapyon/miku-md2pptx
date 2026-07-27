@@ -1,3 +1,5 @@
+import { inflateRawSync } from "node:zlib";
+
 const decoder = new TextDecoder();
 
 function readUint16(data, offset) {
@@ -24,11 +26,26 @@ export function unzipStoredBinaryEntries(data) {
     const nameStart = offset + 30;
     const dataStart = nameStart + fileNameLength + extraLength;
     const name = decoder.decode(data.slice(nameStart, nameStart + fileNameLength));
-    if (method !== 0) {
+    const compressed = data.slice(dataStart, dataStart + compressedSize);
+    const content = method === 0 ? compressed : method === 8 ? inflateRawSync(compressed) : undefined;
+    if (content === undefined) {
       throw new Error(`Unsupported zip compression method: ${method}`);
     }
-    entries.set(name, data.slice(dataStart, dataStart + compressedSize));
+    entries.set(name, content);
     offset = dataStart + compressedSize;
   }
   return entries;
+}
+
+export function zipCompressionMethods(data) {
+  const methods = [];
+  let offset = 0;
+  while (offset + 4 <= data.length && readUint32(data, offset) === 0x04034b50) {
+    methods.push(readUint16(data, offset + 8));
+    const compressedSize = readUint32(data, offset + 18);
+    const fileNameLength = readUint16(data, offset + 26);
+    const extraLength = readUint16(data, offset + 28);
+    offset += 30 + fileNameLength + extraLength + compressedSize;
+  }
+  return methods;
 }

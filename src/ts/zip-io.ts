@@ -7,7 +7,9 @@ import {
 export type ZipFileEntry = ZipEntryInput;
 
 export function createZip(entries: ZipFileEntry[]): Uint8Array {
-  return writeZipPackage(entries);
+  return writeZipPackage(
+    entries.map((entry) => ({ ...entry, compression: "deflate" as const }))
+  );
 }
 
 export function readZipEntries(data: Uint8Array): Map<string, Uint8Array> {

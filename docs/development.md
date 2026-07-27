@@ -22,6 +22,20 @@ Adopted repository-shape decisions from the sister repositories:
 - local `workplace/` scratch area tracked only by `workplace/.gitkeep`
 - generated outputs under `dist/`, `bundle/`, and `coverage/`
 
+## CLI Development
+
+Run the CLI from a source checkout with the npm script:
+
+```bash
+npm install
+npm run cli -- ./sample.md --out ./sample.pptx
+npm run cli -- ./sample.md --out ./sample.pptx --template ./template.pptx
+npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
+```
+
+These are development commands. Release users should run the versioned
+single-file CLI asset documented in `README.md` and `--help`.
+
 Reference decisions from `miku-pptx2md`:
 
 - Treat PowerPoint conversion as structure-first rather than visual-fidelity
@@ -83,6 +97,10 @@ Presentation software check:
 
 - Microsoft PowerPoint for macOS opens generated text-only, link, image, table,
   speaker-note, and representative combined structural decks without repair.
+- On 2026-07-27, version `0.7.0` normal and template-based decks were generated
+  from the single-file CLI bundle. `unzip -lv` reported `Defl:N` for every ZIP
+  entry in both files, and Microsoft PowerPoint for macOS opened both
+  presentations without an interactive repair step.
 - On 2026-07-18, a fresh non-template deck generated with the corrected OOXML
   slide layout type `obj` opened without repair. Saving it in PowerPoint kept
   `type="obj"`; reverse conversion of the generated and PowerPoint-saved files
