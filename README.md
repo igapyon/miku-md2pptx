@@ -11,7 +11,7 @@ Generated PPTX package entries use ZIP DEFLATE compression.
 
 ## What It Converts
 
-The first implementation supports:
+The initial version supports:
 
 - heading level 1 and 2 sections as slides
 - paragraphs
@@ -48,20 +48,20 @@ Known limitations:
 Download the CLI Release Asset and run it directly from the download directory:
 
 ```bash
-node miku-md2pptx-0.7.0.mjs input.md --out output.pptx
+node miku-md2pptx-0.8.0.mjs input.md --out output.pptx
 ```
 
 Use a PowerPoint template:
 
 ```bash
-node miku-md2pptx-0.7.0.mjs input.md --out output.pptx --template template.pptx
+node miku-md2pptx-0.8.0.mjs input.md --out output.pptx --template template.pptx
 ```
 
 Show help or version:
 
 ```bash
-node miku-md2pptx-0.7.0.mjs --help
-node miku-md2pptx-0.7.0.mjs --version
+node miku-md2pptx-0.8.0.mjs --help
+node miku-md2pptx-0.8.0.mjs --version
 ```
 
 For development from a source checkout, install dependencies once and use the
@@ -114,15 +114,24 @@ Speaker notes can be written as:
 
 ## Current Status
 
-This repository is in first-cut development. It creates `.pptx` files from
-Markdown headings and text-oriented document blocks. The first reverse
-compatibility fixture verifies `miku-md2pptx -> miku-pptx2md` extraction for
-slide order, slide titles, body text, bullet lists, external hyperlinks, local
-image assets, speaker notes, and simple tables. The CLI reports conversion
-warnings such as skipped images on stderr. PowerPoint repair checks currently
-cover the same supported structural scope. Template mode has been smoke-tested
-with a local PowerPoint template under `workplace/`; generated slides reference
-the selected template layout, and existing template slides are not copied.
+The initial Markdown-to-PPTX version is complete and stable within the
+supported scope described in this README. It creates `.pptx` files from the
+listed Markdown structures. The compatibility fixture verifies
+`miku-md2pptx -> miku-pptx2md` extraction for slide order, slide titles, body
+text, bullet lists, external hyperlinks, local image assets, speaker notes,
+and simple tables. Representative decks in this scope have been checked in
+Microsoft PowerPoint for macOS without repair. These checks apply to the
+documented structures; they do not claim pixel-perfect layout or support for
+every PowerPoint feature.
+
+Template mode reuses the selected template's design structure where practical,
+as described above. It does not perform full PowerPoint layout flow, so dense
+content, images, and tables may need final positioning in PowerPoint.
+
+Further layout-fidelity improvements, additional Keynote and LibreOffice
+compatibility checks, and the decision about a separate Web App remain future
+improvements or product decisions tracked in [TODO.md](./TODO.md). They are
+outside the completed initial scope.
 
 Related miku-soft applications:
 
