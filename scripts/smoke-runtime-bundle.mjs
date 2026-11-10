@@ -8,6 +8,11 @@ if (!existsSync(runtimeBundlePath)) {
 
 const runtime = await import(`../${runtimeBundlePath}`);
 
+const runtimeSource = await (await import("node:fs/promises")).readFile(runtimeBundlePath, "utf8");
+if (/(?:from|import)\s*["\']node:/.test(runtimeSource) || /\bprocess\.(?:getBuiltinModule|env|argv|cwd|execPath)\b|\bBuffer\.from\b|\bglobalThis\.(?:Buffer|process|document)\b|\bnew DOMParser\b/.test(runtimeSource)) {
+  throw new Error("Runtime bundle contains a Node-only or DOM-only dependency.");
+}
+
 if (runtime.mikuMd2PptxMetadata?.productName !== "miku-md2pptx") {
   throw new Error("Runtime bundle metadata has an unexpected productName.");
 }
@@ -21,7 +26,7 @@ for (const exportName of ["markdownToPptx", "markdownToPptxResult", "markdownToS
   }
 }
 
-const result = runtime.markdownToPptxResult("# Smoke\n\nRuntime bundle check");
+const result = await runtime.markdownToPptxResult("# Smoke\n\nRuntime bundle check");
 if (!(result.pptx instanceof Uint8Array) || result.pptx.byteLength === 0) {
   throw new Error("Runtime bundle did not generate a non-empty PPTX buffer.");
 }

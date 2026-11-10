@@ -11,7 +11,7 @@ const onePixelPng = new Uint8Array([
 ]);
 
 describe("miku-md2pptx core", () => {
-  it("exports runtime metadata for downstream adapters", () => {
+  it("exports runtime metadata for downstream adapters", async () => {
     expect(mikuMd2PptxMetadata).toEqual({
       productName: "miku-md2pptx",
       artifactRole: "markdown-to-pptx-runtime",
@@ -21,7 +21,7 @@ describe("miku-md2pptx core", () => {
     });
   });
 
-  it("splits Markdown into slides at level 1 and 2 headings", () => {
+  it("splits Markdown into slides at level 1 and 2 headings", async () => {
     const slides = markdownToSlides("# One\n\nBody\n\n## Two\n\n- Item\n");
 
     expect(slides).toEqual([
@@ -30,8 +30,8 @@ describe("miku-md2pptx core", () => {
     ]);
   });
 
-  it("creates a pptx package with presentation and slide parts", () => {
-    const pptx = markdownToPptx("# Deck\n\n## Slide\n\nBody");
+  it("creates a pptx package with presentation and slide parts", async () => {
+    const pptx = await markdownToPptx("# Deck\n\n## Slide\n\nBody");
     const entries = unzipStoredEntries(pptx);
     expect(new Set(zipCompressionMethods(pptx))).toEqual(new Set([8]));
 
@@ -43,8 +43,8 @@ describe("miku-md2pptx core", () => {
     expect(entries.get("ppt/slides/slide2.xml")).toContain("Body");
   });
 
-  it("preserves supplementary Unicode and removes invalid XML characters", () => {
-    const entries = unzipStoredEntries(markdownToPptx("# Deck 😀\n\nBody\u0001 text \uD800"));
+  it("preserves supplementary Unicode and removes invalid XML characters", async () => {
+    const entries = unzipStoredEntries(await markdownToPptx("# Deck 😀\n\nBody\u0001 text \uD800"));
     const slideXml = entries.get("ppt/slides/slide1.xml");
 
     expect(slideXml).toContain("Deck 😀");
@@ -53,24 +53,24 @@ describe("miku-md2pptx core", () => {
     expect(slideXml).not.toContain("\uFFFD");
   });
 
-  it("writes Markdown tables as native PowerPoint table parts", () => {
-    const entries = unzipStoredEntries(markdownToPptx("# Deck\n\n| A | B |\n| --- | --- |\n| 1 | 2 |"));
+  it("writes Markdown tables as native PowerPoint table parts", async () => {
+    const entries = unzipStoredEntries(await markdownToPptx("# Deck\n\n| A | B |\n| --- | --- |\n| 1 | 2 |"));
 
     expect(entries.get("ppt/slides/slide1.xml")).toContain("<p:graphicFrame>");
     expect(entries.get("ppt/slides/slide1.xml")).toContain("<a:tbl>");
     expect(entries.get("ppt/slides/slide1.xml")).toContain("<a:t>A</a:t>");
   });
 
-  it("writes Markdown links as PowerPoint hyperlink relationships", () => {
-    const entries = unzipStoredEntries(markdownToPptx("# Deck\n\nSee [example](https://example.com/)."));
+  it("writes Markdown links as PowerPoint hyperlink relationships", async () => {
+    const entries = unzipStoredEntries(await markdownToPptx("# Deck\n\nSee [example](https://example.com/)."));
 
     expect(entries.get("ppt/slides/slide1.xml")).toContain("<a:hlinkClick r:id=\"rId2\"/>");
     expect(entries.get("ppt/slides/_rels/slide1.xml.rels")).toContain("Target=\"https://example.com/\"");
     expect(entries.get("ppt/slides/_rels/slide1.xml.rels")).toContain("TargetMode=\"External\"");
   });
 
-  it("embeds resolved local Markdown images as PowerPoint picture parts", () => {
-    const entries = unzipStoredEntries(markdownToPptx("# Deck\n\n![Chart](assets/chart.png)", {
+  it("embeds resolved local Markdown images as PowerPoint picture parts", async () => {
+    const entries = unzipStoredEntries(await markdownToPptx("# Deck\n\n![Chart](assets/chart.png)", {
       resolveImage(url) {
         if (url === "assets/chart.png") {
           return { bytes: onePixelPng, extension: "png" };
@@ -86,8 +86,8 @@ describe("miku-md2pptx core", () => {
     expect(entries.has("ppt/media/image1.png")).toBe(true);
   });
 
-  it("writes speaker notes comments as PowerPoint notes slides", () => {
-    const entries = unzipStoredEntries(markdownToPptx("# Deck\n\nBody\n\n<!-- speaker-notes: Presenter reminder -->"));
+  it("writes speaker notes comments as PowerPoint notes slides", async () => {
+    const entries = unzipStoredEntries(await markdownToPptx("# Deck\n\nBody\n\n<!-- speaker-notes: Presenter reminder -->"));
 
     expect(entries.get("[Content_Types].xml")).toContain("presentationml.notesSlide+xml");
     expect(entries.get("ppt/slides/_rels/slide1.xml.rels")).toContain("relationships/notesSlide");
@@ -95,8 +95,8 @@ describe("miku-md2pptx core", () => {
     expect(entries.get("ppt/notesSlides/notesSlide1.xml")).toContain('ph type="sldImg"');
   });
 
-  it("reports diagnostics for skipped images and raw HTML-like text", () => {
-    const result = markdownToPptxResult("# Deck\n\n![Missing](assets/missing.png)\n\n<span>raw</span>");
+  it("reports diagnostics for skipped images and raw HTML-like text", async () => {
+    const result = await markdownToPptxResult("# Deck\n\n![Missing](assets/missing.png)\n\n<span>raw</span>");
 
     expect(result.pptx.byteLength).toBeGreaterThan(0);
     expect(result.diagnostics).toEqual([
@@ -112,9 +112,13 @@ describe("miku-md2pptx core", () => {
     ]);
   });
 
-  it("uses a template title/body layout without copying existing template slides", () => {
-    const templatePptx = markdownToPptx("# Template cover\n\nTemplate-only body");
-    const result = markdownToPptxResult("# Generated deck\n\nGenerated body", { templatePptx });
+  it("rejects a damaged template ZIP", async () => {
+    await expect(markdownToPptx("# Generated", { templatePptx: new Uint8Array([1, 2, 3]) })).rejects.toThrow(/Template PPTX is not a readable ZIP package/);
+  });
+
+  it("uses a template title/body layout without copying existing template slides", async () => {
+    const templatePptx = await markdownToPptx("# Template cover\n\nTemplate-only body");
+    const result = await markdownToPptxResult("# Generated deck\n\nGenerated body", { templatePptx });
     const entries = unzipStoredEntries(result.pptx);
 
     expect(new Set(zipCompressionMethods(result.pptx))).toEqual(new Set([8]));

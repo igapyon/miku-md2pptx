@@ -1,7 +1,7 @@
 import {
   buildOpcRelationshipsXml,
   escapeXmlAttribute
-} from "../vendor/miku-ms-office-core-0.6.0.mjs";
+} from "../vendor/miku-ms-office-core-0.8.0.mjs";
 
 export const PRESENTATION_NS = "http://schemas.openxmlformats.org/presentationml/2006/main";
 export const REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";

@@ -7,7 +7,9 @@ await build({
   entryPoints: ["src/ts/core.ts"],
   bundle: true,
   format: "esm",
-  platform: "node",
+  platform: "neutral",
+  conditions: [],
+  mainFields: ["module", "main"],
   target: "es2022",
   outfile: "dist/core.js",
   sourcemap: false

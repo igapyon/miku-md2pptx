@@ -126,10 +126,10 @@ Rejected or deferred decisions:
 
 Vendored low-level Office runtime:
 
-- `miku-ms-office-core` `v0.6.0`
-- runtime: `src/vendor/miku-ms-office-core-0.6.0.mjs`
-- source map: `src/vendor/miku-ms-office-core-0.6.0.mjs.map`
-- local TypeScript declarations: `src/vendor/miku-ms-office-core-0.6.0.d.mts`
+- `miku-ms-office-core` `v0.8.0`
+- runtime: `src/vendor/miku-ms-office-core-0.8.0.mjs`
+- source map: `src/vendor/miku-ms-office-core-0.8.0.mjs.map`
+- local TypeScript declarations: `src/vendor/miku-ms-office-core-0.8.0.d.mts`
 - ownership boundary: generic ZIP, OPC relationship, and XML sanitization
   plumbing is delegated to the vendored core; PPTX structure and Markdown
   conversion decisions remain product-owned

@@ -181,7 +181,7 @@ export async function main(args) {
   const outputPath = path.resolve(workingDir, options.out);
   const templatePath = options.template ? path.resolve(workingDir, options.template) : undefined;
   const markdown = await readFile(inputPath, "utf8");
-  const result = markdownToPptxResult(markdown, {
+  const result = await markdownToPptxResult(markdown, {
     title: options.title,
     sourcePath: inputPath,
     ...(templatePath ? { templatePptx: await readFile(templatePath) } : {}),

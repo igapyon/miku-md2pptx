@@ -1,6 +1,6 @@
 {
   "name": "miku-md2pptx",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,9 @@
     "smoke:runtime": "node scripts/smoke-runtime-bundle.mjs",
     "build": "node scripts/build-miku-md2pptx.mjs",
     "build:bundle": "node scripts/build-cli-bundle.mjs",
-    "build:all": "npm run build && npm run build:bundle"
+    "build:all": "npm run build && npm run build:bundle",
+    "test:browser": "node scripts/build-browser-harness.mjs && playwright test",
+    "test:types": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "remark-gfm": "^4.0.1",
@@ -21,6 +23,7 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.10.2",
     "esbuild": "^0.28.1",
     "typescript": "^5.7.3",
@@ -28,5 +31,8 @@
   },
   "overrides": {
     "esbuild": "^0.28.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -59,7 +59,9 @@ async function main() {
     entryPoints: ["src/ts/core.ts"],
     bundle: true,
     format: "esm",
-    platform: "node",
+    platform: "neutral",
+    conditions: [],
+    mainFields: ["module", "main"],
     target: "es2022",
     outfile: path.resolve(rootDir, "dist/core.js"),
     sourcemap: false
@@ -70,15 +72,17 @@ async function main() {
     bundle: true,
     format: "esm",
     platform: "node",
-    target: "node20",
+    target: "node22",
     outfile: cliOutputPath
   });
   await build({
     entryPoints: ["src/ts/core.ts"],
     bundle: true,
     format: "esm",
-    platform: "node",
-    target: "node20",
+    platform: "neutral",
+    conditions: [],
+    mainFields: ["module", "main"],
+    target: "es2022",
     outfile: runtimeOutputPath
   });
   await fs.chmod(cliOutputPath, 0o755);

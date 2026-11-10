@@ -9,6 +9,19 @@ The conversion goal is practical slide structure, not pixel-perfect PowerPoint
 layout.
 Generated PPTX package entries use ZIP DEFLATE compression.
 
+## JavaScript Runtime API
+
+`markdownToPptxResult(markdown, options)` and `markdownToPptx(markdown, options)` return Promises because package reading and writing use the standard Streams API. `markdownToSlides(markdown, options)` remains synchronous.
+
+```js
+const slides = markdownToSlides(markdown);
+const result = await markdownToPptxResult(markdown, options);
+const pptxBytes = result.pptx;
+```
+
+Use Node.js 22 or newer. Browser and Worker callers need standard
+`CompressionStream` and `DecompressionStream` support for DEFLATE packages.
+
 ## What It Converts
 
 The initial version supports:
@@ -114,6 +127,8 @@ Speaker notes can be written as:
 
 ## Current Status
 
+The source version is now 0.8.1; its asynchronous ZIP migration has not been published yet. The latest published CLI asset remains 0.8.0.
+
 The initial Markdown-to-PPTX version is complete and stable within the
 supported scope described in this README. It creates `.pptx` files from the
 listed Markdown structures. The compatibility fixture verifies
@@ -169,7 +184,7 @@ tracked.
 Generated build outputs under `dist/`, `bundle/`, and `coverage/` are ignored.
 
 Low-level ZIP, OPC relationship, and XML sanitization support is vendored from
-`miku-ms-office-core` `v0.6.0` under `src/vendor/`. PowerPoint-specific document
+`miku-ms-office-core` `v0.8.0` under `src/vendor/`. PowerPoint-specific document
 meaning and Markdown conversion policy remain in this repository's product
 core.
 
