@@ -10,7 +10,6 @@ permissions:
 env:
   PRODUCT_NAME: miku-md2pptx
   RELEASE_ASSETS_DIR: release-assets
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   release-cli-runtime-bundles:
@@ -27,7 +26,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
 
       - name: Install dependencies
@@ -59,11 +58,20 @@ jobs:
 
           echo "RELEASE_VERSION=${release_version}" >> "$GITHUB_ENV"
 
-      - name: Build
-        run: npm run build
+      - name: Build and verify
+        run: |
+          npm test
+          npm run build:all
+          npm run test:types
+          npm run smoke:version
+          npm run smoke:bundle
+          npm run smoke:runtime
 
-      - name: Build release bundles
-        run: npm run build:bundle
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Verify runtime in browsers
+        run: npm run test:browser
 
       - name: Verify release bundle files
         run: |
@@ -71,9 +79,6 @@ jobs:
           test -s "bundle/${PRODUCT_NAME}.mjs"
           test -s "bundle/${PRODUCT_NAME}-runtime.mjs"
           test -s "bundle/${PRODUCT_NAME}-sources.tgz"
-
-      - name: Test
-        run: npm run test:unit
 
       - name: Smoke test CLI bundle
         run: npm run smoke:bundle

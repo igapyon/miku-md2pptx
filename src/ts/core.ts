@@ -252,8 +252,8 @@ function nextTemplateImageIndex(entries: Map<string, Uint8Array>): number {
   return maxIndex + 1;
 }
 
-function createTemplateContext(templatePptx: Uint8Array): TemplateContext | undefined {
-  const entries = readZipEntries(templatePptx);
+async function createTemplateContext(templatePptx: Uint8Array): Promise<TemplateContext | undefined> {
+  const entries = await readZipEntries(templatePptx);
   const presentationXml = readTextEntry(entries, "ppt/presentation.xml");
   const presentationRelsXml = readTextEntry(entries, "ppt/_rels/presentation.xml.rels");
   if (!presentationXml || !presentationRelsXml) {
@@ -604,11 +604,11 @@ function createTemplateBaseEntries(slides: SlideModel[], template: TemplateConte
   ];
 }
 
-export function markdownToPptxResult(markdown: string, options: MarkdownToPptxOptions = {}): MarkdownToPptxResult {
+export async function markdownToPptxResult(markdown: string, options: MarkdownToPptxOptions = {}): Promise<MarkdownToPptxResult> {
   const slides = markdownToSlides(markdown, options);
   const diagnostics = collectDiagnostics(slides, options);
   const title = options.title ?? slides[0]?.title ?? "Markdown deck";
-  const template = options.templatePptx ? createTemplateContext(options.templatePptx) : undefined;
+  const template = options.templatePptx ? await createTemplateContext(options.templatePptx) : undefined;
   if (options.templatePptx && template) {
     diagnostics.push({
       severity: "info",
@@ -696,11 +696,11 @@ export function markdownToPptxResult(markdown: string, options: MarkdownToPptxOp
   }
 
   return {
-    pptx: createZip(entries),
+    pptx: await createZip(entries),
     diagnostics
   };
 }
 
-export function markdownToPptx(markdown: string, options: MarkdownToPptxOptions = {}): Uint8Array {
-  return markdownToPptxResult(markdown, options).pptx;
+export async function markdownToPptx(markdown: string, options: MarkdownToPptxOptions = {}): Promise<Uint8Array> {
+  return (await markdownToPptxResult(markdown, options)).pptx;
 }

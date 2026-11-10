@@ -114,7 +114,7 @@ describe("miku-md2pptx CLI", () => {
     const out = join(dir, "out.pptx");
     try {
       await writeFile(input, "# Generated\n\nGenerated body\n", "utf8");
-      await writeFile(template, markdownToPptx("# Template\n\nTemplate-only body"));
+      await writeFile(template, await markdownToPptx("# Template\n\nTemplate-only body"));
       const result = spawnSync(process.execPath, [
         "scripts/miku-md2pptx-cli.mjs",
         input,

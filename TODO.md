@@ -81,3 +81,8 @@ If the same failure appears 3 times, stop and ask the user.
   tables are positioned relative to the resolved body placeholder when
   possible. Detailed overlap and final visual polish remain a PowerPoint
   adjustment step.
+
+## Asynchronous ZIP migration
+
+- [x] Upgrade the PPTX runtime to miku-ms-office-core 0.8.0 and propagate async ZIP reads and writes through template handling, the library, CLI, runtime, and tests.
+- [ ] Run the DOCX Web App integration after its upstream DOCX runtime passes T7.
